@@ -14,3 +14,7 @@
 - MongoDB fits product catalog data and flexible specs.
 - Session auth matches the requirement for authenticated CRUD and session handling.
 - Docker isolates the frontend, backend, and database into clear deployable units.
+
+## Why We Chose This Stack
+
+We chose this stack because it keeps the webshop easy to build, test, and deploy as one Dockerized project. React + Vite gives a responsive frontend with a fast dev workflow, Express provides a lightweight API layer, MongoDB handles flexible product and category data well, and session-based auth with a MongoDB store gives persistent login state without adding JWT complexity.

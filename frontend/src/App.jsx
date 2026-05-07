@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { apiDelete, apiGet, apiPost, apiPut } from "./api";
 
@@ -62,7 +63,7 @@ const formatPrice = (value) => {
   return `${Number(value).toFixed(2)} EUR`;
 };
 
-const App = () => {
+const ShopPage = ({ focus = "shop" }) => {
   const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -91,9 +92,11 @@ const App = () => {
 
   const catalogRef = useRef(null);
   const authRef = useRef(null);
+  const navigate = useNavigate();
 
   const isAdmin = user?.role === "admin";
   const isCustomer = user?.role === "customer";
+  const canBuy = isCustomer || isAdmin;
 
   const storageOptions = useMemo(() => {
     const options = new Set();
@@ -161,6 +164,14 @@ const App = () => {
     setTimeout(() => setError(""), 4000);
   };
 
+  const updateFilterWithoutScrollJump = (updateFn) => {
+    const currentScrollY = window.scrollY;
+    updateFn();
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: currentScrollY, behavior: "auto" });
+    });
+  };
+
   const loadCatalog = async () => {
     const [productsData, categoriesData] = await Promise.all([
       apiGet("/products"),
@@ -194,6 +205,7 @@ const App = () => {
       try {
         const me = await apiGet("/auth/me");
         setUser(me.user);
+        setAuthMode("login");
         await loadCatalog();
       } catch (err) {
         fail(err.message);
@@ -211,8 +223,22 @@ const App = () => {
       setCart(null);
       setOrders([]);
       setProfileForm({ name: "" });
+      setAuthMode("login");
     }
   }, [user]);
+
+  useEffect(() => {
+    if (focus === "auth") {
+      setAuthMode("login");
+      setTimeout(() => {
+        authRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
+    } else {
+      setTimeout(() => {
+        catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
+    }
+  }, [focus]);
 
   const handleAuthSubmit = async (event) => {
     event.preventDefault();
@@ -236,6 +262,7 @@ const App = () => {
     try {
       await apiPost("/auth/logout", {});
       setUser(null);
+      setAuthMode("login");
       notify("Logged out.");
     } catch (err) {
       fail(err.message);
@@ -275,6 +302,7 @@ const App = () => {
       await apiPost("/orders", {});
       await loadCart();
       await loadOrders();
+      await loadCatalog();
       notify("Order placed.");
     } catch (err) {
       fail(err.message);
@@ -322,11 +350,13 @@ const App = () => {
     setSelectedCategory("all");
     setSpecFilter("all");
     setScreenFilter("all");
+    navigate("/shop");
     catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const scrollToAuth = () => {
     setAuthMode("register");
+    navigate("/auth");
     authRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -343,7 +373,7 @@ const App = () => {
           .filter(Boolean),
       };
 
-      if (editingProductId) {
+      if (editingProductId && editingProductId !== "new") {
         await apiPut(`/products/${editingProductId}`, payload);
         notify("Product updated.");
       } else {
@@ -389,7 +419,7 @@ const App = () => {
         name: categoryForm.name,
         description: categoryForm.description,
       };
-      if (editingCategoryId) {
+      if (editingCategoryId && editingCategoryId !== "new") {
         await apiPut(`/categories/${editingCategoryId}`, payload);
         notify("Category updated.");
       } else {
@@ -422,6 +452,8 @@ const App = () => {
     }
   };
 
+
+
   const cartTotal = cart?.items?.reduce((sum, item) => {
     const price = item.product?.price || 0;
     return sum + price * item.quantity;
@@ -439,7 +471,16 @@ const App = () => {
           <span className="brand-sub">Mobile Webshop</span>
         </div>
         <div className="header-actions">
+          <div className="header-switcher">
+            <button className="ghost" type="button" onClick={() => navigate("/shop")}>
+              Shop
+            </button>
+            <button className="ghost" type="button" onClick={() => navigate("/auth")}>
+              Auth
+            </button>
+          </div>
           <span className="chip">Guest ready</span>
+          {/* Remove admin dashboard button, only show Shop if needed */}
           {user ? (
             <div className="user-pill">
               <span>{user.name}</span>
@@ -459,643 +500,694 @@ const App = () => {
       {status && <div className="toast">{status}</div>}
       {error && <div className="toast error">{error}</div>}
 
-      <section className="hero">
-        <div className="hero-text">
-          <p className="hero-tag">New drop 2026</p>
-          <h1>Phones that feel like tomorrow.</h1>
-          <p className="hero-copy">
-            Explore curated mobile devices with bold specs. Guests can browse,
-            registered shoppers can build a cart and place orders, and admins
-            can manage the whole catalog.
-          </p>
-          <div className="hero-actions">
-            <button className="primary" onClick={scrollToCatalog}>
-              Browse catalog
-            </button>
-            {!user && (
-              <button className="secondary" onClick={scrollToAuth}>
-                Create account
-              </button>
-            )}
-          </div>
-          <div className="hero-stats">
-            <div>
-              <strong>8</strong>
-              <span>Demo products</span>
-            </div>
-            <div>
-              <strong>5</strong>
-              <span>Collections</span>
-            </div>
-            <div>
-              <strong>24/7</strong>
-              <span>Session auth</span>
-            </div>
-          </div>
-        </div>
-        <div className="hero-card">
-          <div className="hero-card-top">
-            <span>Flagship highlight</span>
-            <span className="accent">Aurora X1</span>
-          </div>
-          <div className="hero-card-body">
-            <div className="phone-frame">
-              <div className="phone-screen">
-                <div className="phone-dot" />
-                <div className="phone-info">
-                  <p>OLED 6.7</p>
-                  <p>512 GB</p>
-                  <p>Triple cam</p>
+        {/* Catalog/shop view for all users, with admin inline editing and add buttons */}
+        <section className="hero">
+            <div className="hero-text">
+              <p className="hero-tag">New drop 2026</p>
+              <h1>Phones that feel like tomorrow.</h1>
+              <p className="hero-copy">
+                Explore curated mobile devices with bold specs. Guests can browse,
+                registered shoppers can build a cart and place orders, and admins
+                can manage the whole catalog.
+              </p>
+              <div className="hero-actions">
+                <button className="primary" onClick={scrollToCatalog}>
+                  Browse catalog
+                </button>
+                {!user && (
+                  <button className="secondary" onClick={scrollToAuth}>
+                    Create account
+                  </button>
+                )}
+              </div>
+              <div className="hero-stats">
+                <div>
+                  <strong>8</strong>
+                  <span>Demo products</span>
+                </div>
+                <div>
+                  <strong>5</strong>
+                  <span>Collections</span>
+                </div>
+                <div>
+                  <strong>24/7</strong>
+                  <span>Session auth</span>
                 </div>
               </div>
             </div>
-            <div className="hero-card-meta">
-              <p>
-                Ultra smooth glass, pro grade optics, and a frame built for
-                speed.
-              </p>
+            <div className="hero-card">
+              <div className="hero-card-top">
+                <span>Flagship highlight</span>
+                <span className="accent">Aurora X1</span>
+              </div>
+              <div className="hero-card-body">
+                <div className="phone-frame">
+                  <div className="phone-screen">
+                    <div className="phone-dot" />
+                    <div className="phone-info">
+                      <p>OLED 6.7</p>
+                      <p>512 GB</p>
+                      <p>Triple cam</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="hero-card-meta">
+                  <p>
+                    Ultra smooth glass, pro grade optics, and a frame built for
+                    speed.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="content">
-        <div className="products-section scroll-target" ref={catalogRef}>
-          <div className="section-head">
-            <div>
-              <h2>Catalog</h2>
-              <p>Filter by collection to explore your next device.</p>
-            </div>
-            <div className="filters">
-              <button
-                className={
-                  selectedCategory === "all" ? "filter active" : "filter"
-                }
-                onClick={() => setSelectedCategory("all")}
-              >
-                All
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category._id}
-                  className={
-                    selectedCategory === category._id
-                      ? "filter active"
-                      : "filter"
-                  }
-                  onClick={() => setSelectedCategory(category._id)}
-                >
-                  {category.name}
-                </button>
-              ))}
-              {storageOptions.length > 0 && (
-                <label className="storage-filter">
-                  <span>Storage</span>
-                  <select
-                    value={specFilter}
-                    onChange={(event) => setSpecFilter(event.target.value)}
-                  >
-                    <option value="all">All</option>
-                    {storageOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {screenOptions.length > 0 && (
-                <label className="screen-filter">
-                  <span>Screen</span>
-                  <select
-                    value={screenFilter}
-                    onChange={(event) => setScreenFilter(event.target.value)}
-                  >
-                    <option value="all">All</option>
-                    {screenOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-            </div>
-          </div>
-
-          <div className="product-grid">
-            {visibleProducts.map((product, index) => (
-              <div
-                key={product._id}
-                className="product-card"
-                style={{ animationDelay: `${index * 70}ms` }}
-              >
-                <div
-                  className="product-image"
-                  style={{ backgroundImage: `url(${product.imageUrl || ""})` }}
-                />
-                <div className="product-body">
+            <section className="content">
+              <div className="products-section scroll-target" ref={catalogRef}>
+                <div className="section-head">
                   <div>
-                    <h3>{product.name}</h3>
-                    <p className="muted">{product.brand}</p>
+                    <h2>Catalog</h2>
+                    <p>Filter by collection to explore your next device.</p>
                   </div>
-                  <div className="price-row">
-                    <span>{formatPrice(product.price)}</span>
-                    <span className="stock">Stock {product.stock}</span>
-                  </div>
-                  <div className="specs">
-                    {product.specs?.slice(0, 3).map((spec) => (
-                      <span key={spec}>{spec}</span>
-                    ))}
-                  </div>
-                  <div className="product-footer">
-                    <span className="pill">{product.category?.name || ""}</span>
-                    {isCustomer ? (
+                  <div className="filters">
+                    <button
+                      type="button"
+                      className={
+                        selectedCategory === "all" ? "filter active" : "filter"
+                      }
+                      onClick={() =>
+                        updateFilterWithoutScrollJump(() => setSelectedCategory("all"))
+                      }
+                    >
+                      All
+                    </button>
+                    {categories.map((category) => (
                       <button
-                        className="primary"
                         type="button"
-                        onClick={() => handleAddToCart(product._id)}
+                        key={category._id}
+                        className={
+                          selectedCategory === category._id
+                            ? "filter active"
+                            : "filter"
+                        }
+                        onClick={() =>
+                          updateFilterWithoutScrollJump(() =>
+                            setSelectedCategory(category._id),
+                          )
+                        }
                       >
-                        Add to cart
+                        {category.name}
                       </button>
-                    ) : (
-                      <span className="muted">Login to buy</span>
+                    ))}
+                    {storageOptions.length > 0 && (
+                      <label className="storage-filter">
+                        <span>Storage</span>
+                        <select
+                          value={specFilter}
+                          onChange={(event) =>
+                            updateFilterWithoutScrollJump(() =>
+                              setSpecFilter(event.target.value),
+                            )
+                          }
+                        >
+                          <option value="all">All</option>
+                          {storageOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {screenOptions.length > 0 && (
+                      <label className="screen-filter">
+                        <span>Screen</span>
+                        <select
+                          value={screenFilter}
+                          onChange={(event) =>
+                            updateFilterWithoutScrollJump(() =>
+                              setScreenFilter(event.target.value),
+                            )
+                          }
+                        >
+                          <option value="all">All</option>
+                          {screenOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <aside className="side-panels">
-          {isAdmin && (
-            <div className="panel admin">
-              <div className="panel-head">
-                <h3>Admin Studio</h3>
-                <span className="chip">CRUD</span>
-              </div>
-              <form className="panel-body" onSubmit={handleProductSubmit}>
-                <label>
-                  Product name
-                  <input
-                    value={productForm.name}
-                    onChange={(event) =>
-                      setProductForm((prev) => ({
-                        ...prev,
-                        name: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label>
-                  Brand
-                  <input
-                    value={productForm.brand}
-                    onChange={(event) =>
-                      setProductForm((prev) => ({
-                        ...prev,
-                        brand: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <div className="grid-two">
-                  <label>
-                    Price
-                    <input
-                      type="number"
-                      value={productForm.price}
-                      onChange={(event) =>
-                        setProductForm((prev) => ({
-                          ...prev,
-                          price: event.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                  <label>
-                    Stock
-                    <input
-                      type="number"
-                      value={productForm.stock}
-                      onChange={(event) =>
-                        setProductForm((prev) => ({
-                          ...prev,
-                          stock: event.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                </div>
-                <label>
-                  Category
-                  <select
-                    value={productForm.category}
-                    onChange={(event) =>
-                      setProductForm((prev) => ({
-                        ...prev,
-                        category: event.target.value,
-                      }))
-                    }
-                    required
-                  >
-                    <option value="">Select</option>
-                    {categories.map((category) => (
-                      <option key={category._id} value={category._id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Specs (comma separated)
-                  <input
-                    value={productForm.specs}
-                    onChange={(event) =>
-                      setProductForm((prev) => ({
-                        ...prev,
-                        specs: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  Image URL
-                  <input
-                    value={productForm.imageUrl}
-                    onChange={(event) =>
-                      setProductForm((prev) => ({
-                        ...prev,
-                        imageUrl: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <div className="panel-actions">
-                  <button className="primary" type="submit">
-                    {editingProductId ? "Update product" : "Add product"}
-                  </button>
-                  {editingProductId && (
-                    <button
-                      type="button"
-                      className="ghost"
+                <div className="product-grid">
+                  {/* Add product button - always first, styled as panel */}
+                  {isAdmin && editingProductId !== "new" && (
+                    <div
+                      className="product-card add-product-card"
                       onClick={() => {
-                        setEditingProductId(null);
+                        setEditingProductId("new");
                         setProductForm(emptyProductForm);
                       }}
                     >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-                <div className="admin-list">
-                  {products.map((product) => (
-                    <div key={product._id} className="admin-row">
-                      <div className="admin-meta">
-                        <strong>{product.name}</strong>
-                        <span className="muted">{product.category?.name}</span>
-                      </div>
-                      <div className="row-actions">
-                        <button
-                          className="ghost"
-                          type="button"
-                          onClick={() => handleEditProduct(product)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="danger"
-                          type="button"
-                          onClick={() => handleDeleteProduct(product._id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      + Add Product
                     </div>
-                  ))}
-                </div>
-              </form>
-
-              <form className="panel-body" onSubmit={handleCategorySubmit}>
-                <h4>Categories</h4>
-                <label>
-                  Name
-                  <input
-                    value={categoryForm.name}
-                    onChange={(event) =>
-                      setCategoryForm((prev) => ({
-                        ...prev,
-                        name: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label>
-                  Description
-                  <input
-                    value={categoryForm.description}
-                    onChange={(event) =>
-                      setCategoryForm((prev) => ({
-                        ...prev,
-                        description: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <div className="panel-actions">
-                  <button className="primary" type="submit">
-                    {editingCategoryId ? "Update category" : "Add category"}
-                  </button>
-                  {editingCategoryId && (
-                    <button
-                      type="button"
-                      className="ghost"
-                      onClick={() => {
-                        setEditingCategoryId(null);
-                        setCategoryForm(emptyCategoryForm);
+                  )}
+                  {/* Inline add form for new product - always at the top */}
+                  {isAdmin && editingProductId === "new" && (
+                    <form
+                      key="new-product"
+                      className="product-card editing"
+                      style={{ animationDelay: `0ms` }}
+                      onSubmit={e => {
+                        e.preventDefault();
+                        // Prevent invalid category
+                        if (!productForm.category || productForm.category === "new") {
+                          fail("Please select a valid category.");
+                          return;
+                        }
+                        handleProductSubmit(e);
                       }}
                     >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-                <div className="admin-list">
-                  {categories.map((category) => (
-                    <div key={category._id} className="admin-row">
-                      <div className="admin-meta">
-                        <strong>{category.name}</strong>
-                        <span className="muted">
-                          {category.description || ""}
-                        </span>
-                      </div>
-                      <div className="row-actions">
-                        <button
-                          className="ghost"
-                          type="button"
-                          onClick={() => handleEditCategory(category)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="danger"
-                          type="button"
-                          onClick={() => handleDeleteCategory(category._id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </form>
-            </div>
-          )}
-
-          <div className="panel auth scroll-target" ref={authRef}>
-            <div className="panel-head">
-              <h3>{user ? "Session" : "Account"}</h3>
-              <span className="chip">Session auth</span>
-            </div>
-            {user ? (
-              <div className="panel-body">
-                <p className="muted">You are signed in as {user.email}.</p>
-                <div className="panel-actions">
-                  <button className="ghost" onClick={handleLogout}>
-                    Log out
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form className="panel-body" onSubmit={handleAuthSubmit}>
-                {authMode === "register" && (
-                  <label>
-                    Name
-                    <input
-                      value={authForm.name}
-                      onChange={(event) =>
-                        setAuthForm((prev) => ({
-                          ...prev,
-                          name: event.target.value,
-                        }))
-                      }
-                      placeholder="Your name"
-                      required
-                    />
-                  </label>
-                )}
-                <label>
-                  Email
-                  <input
-                    value={authForm.email}
-                    onChange={(event) =>
-                      setAuthForm((prev) => ({
-                        ...prev,
-                        email: event.target.value,
-                      }))
-                    }
-                    placeholder="you@example.com"
-                    required
-                  />
-                </label>
-                <label>
-                  Password
-                  <input
-                    type="password"
-                    value={authForm.password}
-                    onChange={(event) =>
-                      setAuthForm((prev) => ({
-                        ...prev,
-                        password: event.target.value,
-                      }))
-                    }
-                    placeholder="Min 6 chars"
-                    required
-                  />
-                </label>
-                <button className="primary" type="submit">
-                  {authMode === "register" ? "Register and login" : "Login"}
-                </button>
-                <button
-                  type="button"
-                  className="ghost"
-                  onClick={() =>
-                    setAuthMode(authMode === "login" ? "register" : "login")
-                  }
-                >
-                  {authMode === "login" ? "Need an account?" : "Back to login"}
-                </button>
-                <p className="muted small">
-                  Demo buyer: demo@phone-shop.test / Demo123!
-                </p>
-              </form>
-            )}
-          </div>
-
-          <div className="panel cart">
-            <div className="panel-head">
-              <h3>Cart</h3>
-              <span className="chip">Customer only</span>
-            </div>
-            {isCustomer ? (
-              <div className="panel-body">
-                {cart?.items?.length ? (
-                  <div className="cart-items">
-                    {cart.items.map((item) => (
-                      <div key={item._id} className="cart-item">
-                        <div className="cart-item-info">
-                          <strong>{item.product?.name || ""}</strong>
-                          <span className="muted">
-                            {formatPrice(item.product?.price || 0)}
-                          </span>
+                      <div className="product-image" style={{ backgroundImage: `url(${productForm.imageUrl || ""})` }} />
+                      <div className="product-body">
+                        <div className="product-inline-fields">
+                          <input
+                            value={productForm.name}
+                            onChange={e => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Name"
+                            required
+                          />
+                          <input
+                            value={productForm.brand}
+                            onChange={e => setProductForm(prev => ({ ...prev, brand: e.target.value }))}
+                            placeholder="Brand"
+                            required
+                          />
                         </div>
-                        <div className="cart-controls">
+                        <div className="price-row">
                           <input
                             type="number"
-                            min="1"
-                            max={item.product?.stock || 1}
-                            value={item.quantity}
-                            onChange={(event) =>
-                              handleCartQuantity(
-                                item._id,
-                                Number(event.target.value),
-                              )
-                            }
+                            value={productForm.price}
+                            onChange={e => setProductForm(prev => ({ ...prev, price: e.target.value }))}
+                            placeholder="Price"
+                            required
                           />
-                          <button
-                            className="ghost"
-                            onClick={() => handleRemoveCartItem(item._id)}
+                          <input
+                            type="number"
+                            value={productForm.stock}
+                            onChange={e => setProductForm(prev => ({ ...prev, stock: e.target.value }))}
+                            placeholder="Stock"
+                            required
+                          />
+                        </div>
+                        <div className="specs">
+                          <input
+                            value={productForm.specs}
+                            onChange={e => setProductForm(prev => ({ ...prev, specs: e.target.value }))}
+                            placeholder="Specs (comma separated)"
+                          />
+                        </div>
+                        <div className="product-footer">
+                          <select
+                            value={productForm.category}
+                            onChange={e => setProductForm(prev => ({ ...prev, category: e.target.value }))}
+                            required
                           >
-                            Remove
+                            <option value="">Select category</option>
+                            {categories.map(category => (
+                              <option key={category._id} value={category._id}>{category.name}</option>
+                            ))}
+                          </select>
+                          <input
+                            value={productForm.imageUrl}
+                            onChange={e => setProductForm(prev => ({ ...prev, imageUrl: e.target.value }))}
+                            placeholder="Image URL"
+                          />
+                        </div>
+                        <div className="row-actions">
+                          <button className="primary" type="submit">Add</button>
+                          <button
+                            type="button"
+                            className="ghost"
+                            onClick={() => {
+                              setEditingProductId(null);
+                              setProductForm(emptyProductForm);
+                            }}
+                          >Cancel</button>
+                        </div>
+                      </div>
+                    </form>
+                  )}
+                  {visibleProducts.map((product, index) =>
+                    isAdmin && editingProductId === product._id ? (
+                      <form
+                        key={product._id}
+                        className="product-card editing"
+                        style={{ animationDelay: `${index * 70}ms` }}
+                        onSubmit={handleProductSubmit}
+                      >
+                        <div className="product-image" style={{ backgroundImage: `url(${productForm.imageUrl || ""})` }} />
+                        <div className="product-body">
+                          <div>
+                            <input
+                              value={productForm.name}
+                              onChange={e => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="Name"
+                              required
+                            />
+                            <input
+                              value={productForm.brand}
+                              onChange={e => setProductForm(prev => ({ ...prev, brand: e.target.value }))}
+                              placeholder="Brand"
+                              required
+                            />
+                          </div>
+                          <div className="price-row">
+                            <input
+                              type="number"
+                              value={productForm.price}
+                              onChange={e => setProductForm(prev => ({ ...prev, price: e.target.value }))}
+                              placeholder="Price"
+                              required
+                            />
+                            <input
+                              type="number"
+                              value={productForm.stock}
+                              onChange={e => setProductForm(prev => ({ ...prev, stock: e.target.value }))}
+                              placeholder="Stock"
+                              required
+                            />
+                          </div>
+                          <div className="specs">
+                            <input
+                              value={productForm.specs}
+                              onChange={e => setProductForm(prev => ({ ...prev, specs: e.target.value }))}
+                              placeholder="Specs (comma separated)"
+                            />
+                          </div>
+                          <div className="product-footer">
+                            <select
+                              value={productForm.category}
+                              onChange={e => setProductForm(prev => ({ ...prev, category: e.target.value }))}
+                              required
+                            >
+                              <option value="">Select category</option>
+                              {categories.map(category => (
+                                <option key={category._id} value={category._id}>{category.name}</option>
+                              ))}
+                            </select>
+                            <input
+                              value={productForm.imageUrl}
+                              onChange={e => setProductForm(prev => ({ ...prev, imageUrl: e.target.value }))}
+                              placeholder="Image URL"
+                            />
+                          </div>
+                          <div className="row-actions">
+                            <button className="primary" type="submit">Save</button>
+                            <button
+                              type="button"
+                              className="ghost"
+                              onClick={() => {
+                                setEditingProductId(null);
+                                setProductForm(emptyProductForm);
+                              }}
+                            >Cancel</button>
+                          </div>
+                        </div>
+                      </form>
+                    ) : (
+                      <div
+                        key={product._id}
+                        className="product-card"
+                        style={{ animationDelay: `${index * 70}ms` }}
+                      >
+                        <div className="product-image" style={{ backgroundImage: `url(${product.imageUrl || ""})` }} />
+                        <div className="product-body">
+                          <div>
+                            <h3>{product.name}</h3>
+                            <p className="muted">{product.brand}</p>
+                          </div>
+                          <div className="price-row">
+                            <span>{formatPrice(product.price)}</span>
+                            <span className="stock">Stock {product.stock}</span>
+                          </div>
+                          <div className="specs">
+                            {product.specs?.slice(0, 3).map((spec) => (
+                              <span key={spec}>{spec}</span>
+                            ))}
+                          </div>
+                          <div className="product-footer">
+                            <span className="pill">{product.category?.name || ""}</span>
+                            {canBuy ? (
+                              <button
+                                className="primary"
+                                type="button"
+                                onClick={() => handleAddToCart(product._id)}
+                              >
+                                Add to cart
+                              </button>
+                            ) : (
+                              <span className="muted">Login to buy</span>
+                            )}
+                          </div>
+                          {isAdmin && (
+                            <div className="row-actions">
+                              <button
+                                className="ghost"
+                                type="button"
+                                onClick={() => handleEditProduct(product)}
+                              >Edit</button>
+                              <button
+                                className="danger"
+                                type="button"
+                                onClick={() => handleDeleteProduct(product._id)}
+                              >Delete</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              <aside className="side-panels">
+                {/* Add category panel */}
+                {isAdmin && editingCategoryId !== "new" && (
+                  <button
+                    className="panel add-category-btn"
+                    type="button"
+                    onClick={() => {
+                      setEditingCategoryId("new");
+                      setCategoryForm(emptyCategoryForm);
+                    }}
+                  >
+                    + Add Category
+                  </button>
+                )}
+                {/* Inline add form for new category - styled like old sideboard */}
+                {isAdmin && editingCategoryId === "new" && (
+                  <form
+                    className="category-form panel"
+                    onSubmit={e => {
+                      e.preventDefault();
+                      if (!categoryForm.name.trim()) {
+                        fail("Category name is required.");
+                        return;
+                      }
+                      handleCategorySubmit(e);
+                    }}
+                  >
+                    <h3>Add Category</h3>
+                    <div className="category-form-fields">
+                      <label>
+                        <span>Name</span>
+                        <input
+                          value={categoryForm.name}
+                          onChange={e => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Category name"
+                          required
+                        />
+                      </label>
+                      <label>
+                        <span>Description (optional)</span>
+                        <input
+                          value={categoryForm.description}
+                          onChange={e => setCategoryForm(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Describe this category"
+                        />
+                      </label>
+                      <div className="row-actions">
+                        <button className="primary" type="submit">Add</button>
+                        <button
+                          type="button"
+                          className="ghost"
+                          onClick={() => {
+                            setEditingCategoryId(null);
+                            setCategoryForm(emptyCategoryForm);
+                          }}
+                        >Cancel</button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+                {/* Cart panel (single instance) */}
+                <div className="panel cart">
+                  <div className="panel-head">
+                    <h3>Cart</h3>
+                    <span className="chip">Buyer access</span>
+                  </div>
+                  {canBuy ? (
+                    <div className="panel-body">
+                      {cart?.items?.length ? (
+                        <div className="cart-items">
+                          {cart.items.map((item) => (
+                            <div key={item._id} className="cart-item">
+                              <div className="cart-item-info">
+                                <strong>{item.product?.name || ""}</strong>
+                                <span className="muted">
+                                  {formatPrice(item.product?.price || 0)}
+                                </span>
+                              </div>
+                              <div className="cart-controls">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={item.product?.stock || 1}
+                                  value={item.quantity}
+                                  onChange={(event) =>
+                                    handleCartQuantity(
+                                      item._id,
+                                      Number(event.target.value),
+                                    )
+                                  }
+                                />
+                                <button
+                                  className="ghost"
+                                  onClick={() => handleRemoveCartItem(item._id)}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          <div className="cart-total">
+                            <span>Total</span>
+                            <strong>{formatPrice(cartTotal)}</strong>
+                          </div>
+                          <button className="primary" onClick={handleCheckout}>
+                            Checkout
                           </button>
                         </div>
-                      </div>
-                    ))}
-                    <div className="cart-total">
-                      <span>Total</span>
-                      <strong>{formatPrice(cartTotal)}</strong>
+                      ) : (
+                        <p className="muted">
+                          Your cart is empty. Add a product to start.
+                        </p>
+                      )}
                     </div>
-                    <button className="primary" onClick={handleCheckout}>
-                      Checkout
-                    </button>
-                  </div>
-                ) : (
-                  <p className="muted">
-                    Your cart is empty. Add a product to start.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="panel-body">
-                <p className="muted">
-                  Sign in as a customer to use the cart and checkout.
-                </p>
-              </div>
-            )}
-          </div>
+                  ) : (
+                    <div className="panel-body">
+                      <p className="muted">
+                        Sign in to use the cart and checkout.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-          {user && (
-            <div className="panel orders">
-              <div className="panel-head">
-                <h3>Orders</h3>
-                <span className="chip">{isAdmin ? "Admin" : "Customer"}</span>
-              </div>
-              <div className="panel-body">
-                {orders.length ? (
-                  <div className="order-list">
-                    {orders.slice(0, 4).map((order) => (
-                      <div key={order._id} className="order-item">
-                        <div className="order-meta">
-                          <strong>#{order._id.slice(-6)}</strong>
-                          <span className="muted">
-                            {order.items.length} items
-                          </span>
+                {/* Orders panel (single instance) */}
+                {user && (
+                  <div className="panel orders">
+                    <div className="panel-head">
+                      <h3>Orders</h3>
+                      <span className="chip">{isAdmin ? "Admin" : "Customer"}</span>
+                    </div>
+                    <div className="panel-body">
+                      {orders.length ? (
+                        <div className="order-list">
+                          {orders.slice(0, 4).map((order) => (
+                            <div key={order._id} className="order-item">
+                              <div className="order-meta">
+                                <strong>#{order._id.slice(-6)}</strong>
+                                <span className="muted">
+                                  {order.items.reduce(
+                                    (sum, item) => sum + (item.quantity || 0),
+                                    0,
+                                  )} items
+                                </span>
+                              </div>
+                              <span>{formatPrice(order.total)}</span>
+                            </div>
+                          ))}
                         </div>
-                        <span>{formatPrice(order.total)}</span>
-                      </div>
-                    ))}
+                      ) : (
+                        <p className="muted">No orders yet.</p>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <p className="muted">No orders yet.</p>
                 )}
-              </div>
-            </div>
-          )}
 
-          {user && (
-            <div className="panel profile">
-              <div className="panel-head">
-                <h3>Profile</h3>
-                <span className="chip">Account</span>
-              </div>
-              <form className="panel-body" onSubmit={handleProfileUpdate}>
-                <label>
-                  Name
-                  <input
-                    value={profileForm.name}
-                    onChange={(event) =>
-                      setProfileForm({ name: event.target.value })
-                    }
-                    required
-                  />
-                </label>
-                <button className="primary" type="submit">
-                  Update name
-                </button>
-              </form>
-              <form className="panel-body" onSubmit={handlePasswordChange}>
-                <label>
-                  Current password
-                  <input
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(event) =>
-                      setPasswordForm((prev) => ({
-                        ...prev,
-                        currentPassword: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label>
-                  New password
-                  <input
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(event) =>
-                      setPasswordForm((prev) => ({
-                        ...prev,
-                        newPassword: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <button className="primary" type="submit">
-                  Change password
-                </button>
-              </form>
-              <div className="panel-body">
-                <button
-                  className="danger"
-                  type="button"
-                  onClick={handleDeleteAccount}
-                >
-                  Delete account
-                </button>
-              </div>
-            </div>
-          )}
-        </aside>
-      </section>
+                {/* Profile panel */}
+                {user && (
+                  <div className="panel profile">
+                    <div className="panel-head">
+                      <h3>Profile</h3>
+                      <span className="chip">Account</span>
+                    </div>
+                    <form className="panel-body" onSubmit={handleProfileUpdate}>
+                      <label>
+                        Name
+                        <input
+                          value={profileForm.name}
+                          onChange={(event) =>
+                            setProfileForm({ name: event.target.value })
+                          }
+                          required
+                        />
+                      </label>
+                      <button className="primary" type="submit">
+                        Update name
+                      </button>
+                    </form>
+                    <form className="panel-body" onSubmit={handlePasswordChange}>
+                      <label>
+                        Current password
+                        <input
+                          type="password"
+                          value={passwordForm.currentPassword}
+                          onChange={(event) =>
+                            setPasswordForm((prev) => ({
+                              ...prev,
+                              currentPassword: event.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </label>
+                      <label>
+                        New password
+                        <input
+                          type="password"
+                          value={passwordForm.newPassword}
+                          onChange={(event) =>
+                            setPasswordForm((prev) => ({
+                              ...prev,
+                              newPassword: event.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </label>
+                      <button className="primary" type="submit">
+                        Change password
+                      </button>
+                    </form>
+                    <div className="panel-body">
+                      <button
+                        className="danger"
+                        type="button"
+                        onClick={handleDeleteAccount}
+                      >
+                        Delete account
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Auth panel */}
+                <div className="panel auth scroll-target" ref={authRef}>
+                  <div className="panel-head">
+                    <h3>{user ? "Session" : "Account"}</h3>
+                    <span className="chip">Session auth</span>
+                  </div>
+                  {user ? (
+                    <div className="panel-body">
+                      <p className="muted">You are signed in as {user.email}.</p>
+                      <div className="panel-actions">
+                        <button className="ghost" onClick={handleLogout}>
+                          Log out
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form className="panel-body" onSubmit={handleAuthSubmit}>
+                      {authMode === "register" && (
+                        <label>
+                          Name
+                          <input
+                            value={authForm.name}
+                            onChange={(event) =>
+                              setAuthForm((prev) => ({
+                                ...prev,
+                                name: event.target.value,
+                              }))
+                            }
+                            placeholder="Your name"
+                            required
+                          />
+                        </label>
+                      )}
+                      <label>
+                        Email
+                        <input
+                          value={authForm.email}
+                          onChange={(event) =>
+                            setAuthForm((prev) => ({
+                              ...prev,
+                              email: event.target.value,
+                            }))
+                          }
+                          placeholder="you@example.com"
+                          required
+                        />
+                      </label>
+                      <label>
+                        Password
+                        <input
+                          type="password"
+                          value={authForm.password}
+                          onChange={(event) =>
+                            setAuthForm((prev) => ({
+                              ...prev,
+                              password: event.target.value,
+                            }))
+                          }
+                          placeholder="Min 6 chars"
+                          required
+                        />
+                      </label>
+                      <button className="primary" type="submit">
+                        {authMode === "register" ? "Register and login" : "Login"}
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost"
+                        onClick={() =>
+                          setAuthMode(authMode === "login" ? "register" : "login")
+                        }
+                      >
+                        {authMode === "login" ? "Need an account?" : "Back to login"}
+                      </button>
+                      <p className="muted small">
+                        Demo buyer: demo@phone-shop.test / Demo123!
+                      </p>
+                    </form>
+                  )}
+                </div>
+              </aside>
+            </section>
     </div>
   );
 };
+
+const App = () => (
+  <Routes>
+    <Route path="/" element={<Navigate to="/shop" replace />} />
+    <Route path="/shop" element={<ShopPage focus="shop" />} />
+    <Route path="/auth" element={<ShopPage focus="auth" />} />
+    <Route path="*" element={<Navigate to="/shop" replace />} />
+  </Routes>
+);
 
 export default App;

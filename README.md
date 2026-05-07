@@ -2,20 +2,38 @@
 
 A full stack mobile phone webshop with session-based auth, CRUD management, and a seeded demo catalog.
 
+## Monorepo Layout
+
+This project uses a single monorepo so the frontend, backend, database container, docs, and prompts stay together and are easy to run with Docker.
+
+- frontend/ - React + Vite app
+- backend/ - Node.js + Express API
+- db/ - MongoDB container image
+- docs/ - project documentation
+- prompts/ - AI usage and workflow notes
+
+## Install and Run
+
+You can run everything with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+If you want to run the components separately, build and start them in this order:
+
+1. MongoDB container from `db/`
+2. Backend API from `backend/`
+3. Frontend app from `frontend/`
+
+The backend expects MongoDB and the frontend expects the backend API to be available.
+
 ## Features
 
 - Roles: guest, customer, admin
 - Session auth with protected CRUD endpoints
 - Product, category, cart, order, and review flows
 - Seeded demo data on first startup
-
-## Project Structure
-
-- backend/ - Node.js + Express REST API
-- frontend/ - React + Vite web app
-- db/ - MongoDB Dockerfile
-- docs/ - documentation
-- prompts/ - AI usage notes
 
 ## Demo Accounts
 
@@ -74,3 +92,4 @@ docker compose up --build
 - docs/stack.md
 - docs/requirements.md
 - docs/api.md
+- docs/software-documentation.md

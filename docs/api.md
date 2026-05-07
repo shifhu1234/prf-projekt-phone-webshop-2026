@@ -2,6 +2,12 @@
 
 Base URL: /api
 
+## Access Model
+
+- Public read endpoints stay open for guest browsing of the catalog.
+- Create, update, and delete endpoints require an authenticated session.
+- Admin-only CRUD operations also require the admin role.
+
 ## Auth
 
 - POST /auth/register

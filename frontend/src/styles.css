@@ -112,6 +112,13 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-switcher {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .user-pill {
@@ -274,6 +281,38 @@ body {
   font-weight: 600;
 }
 
+.product-inline-fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.product-inline-fields input {
+  flex: 1 1 160px;
+}
+
+.category-form {
+  display: grid;
+  gap: 14px;
+}
+
+.category-form h3 {
+  margin: 0;
+}
+
+.category-form-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.category-form-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
 .content {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -320,7 +359,7 @@ body {
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 20px;
   margin-top: 20px;
 }
@@ -337,6 +376,24 @@ body {
   opacity: 0;
   transform: translateY(14px);
   animation: cardRise 0.6s ease forwards;
+}
+
+.add-product-card {
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.add-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2);
 }
 
 .product-image {
@@ -417,6 +474,34 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.admin-page {
+  display: grid;
+  gap: 24px;
+}
+
+.admin-page-head {
+  align-items: flex-end;
+}
+
+.admin-content {
+  align-items: flex-start;
+}
+
+.admin-summary {
+  padding: 20px;
+}
+
+.admin-stats {
+  margin-top: 10px;
+}
+
+.admin-studio {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
 }
 
 .panel {
@@ -622,6 +707,10 @@ button {
   text-transform: uppercase;
   letter-spacing: 1.4px;
   color: var(--muted);
+  border: 1px solid var(--stroke);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: transparent;
 }
 
 .screen-filter {
@@ -632,18 +721,28 @@ button {
   text-transform: uppercase;
   letter-spacing: 1.4px;
   color: var(--muted);
+  border: 1px solid var(--stroke);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: transparent;
 }
 
 .storage-filter select {
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: transparent;
+  font-family: inherit;
 }
 
 .screen-filter select {
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: transparent;
+  font-family: inherit;
 }
 
 @keyframes floatIn {
