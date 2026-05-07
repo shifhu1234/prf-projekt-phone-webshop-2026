@@ -472,9 +472,11 @@ const App = () => {
             <button className="primary" onClick={scrollToCatalog}>
               Browse catalog
             </button>
-            <button className="secondary" onClick={scrollToAuth}>
-              Create account
-            </button>
+            {!user && (
+              <button className="secondary" onClick={scrollToAuth}>
+                Create account
+              </button>
+            )}
           </div>
           <div className="hero-stats">
             <div>
@@ -611,6 +613,7 @@ const App = () => {
                     {isCustomer ? (
                       <button
                         className="primary"
+                        type="button"
                         onClick={() => handleAddToCart(product._id)}
                       >
                         Add to cart
@@ -945,7 +948,7 @@ const App = () => {
                   <div className="cart-items">
                     {cart.items.map((item) => (
                       <div key={item._id} className="cart-item">
-                        <div>
+                        <div className="cart-item-info">
                           <strong>{item.product?.name || ""}</strong>
                           <span className="muted">
                             {formatPrice(item.product?.price || 0)}
@@ -955,6 +958,7 @@ const App = () => {
                           <input
                             type="number"
                             min="1"
+                            max={item.product?.stock || 1}
                             value={item.quantity}
                             onChange={(event) =>
                               handleCartQuantity(

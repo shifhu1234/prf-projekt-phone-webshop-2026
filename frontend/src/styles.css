@@ -132,15 +132,19 @@ body {
 }
 
 .toast {
-  position: sticky;
+  position: fixed;
   top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
   background: var(--card);
   border: 1px solid var(--stroke);
   padding: 10px 16px;
   border-radius: 14px;
   box-shadow: var(--shadow);
-  margin-bottom: 16px;
   width: fit-content;
+  max-width: min(92vw, 520px);
+  pointer-events: none;
 }
 
 .toast.error {
@@ -530,6 +534,12 @@ button {
 .cart-item {
   display: grid;
   gap: 8px;
+}
+
+.cart-item-info {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
 }
 
 .cart-controls {

@@ -6,13 +6,54 @@ const Product = require("../models/Product");
 
 const router = express.Router();
 
+const getProductId = (item) => {
+  if (!item?.product) {
+    return null;
+  }
+
+  if (typeof item.product === "object" && item.product._id) {
+    return item.product._id.toString();
+  }
+
+  return item.product.toString();
+};
+
+const normalizeCartItems = async (cart) => {
+  const mergedItems = [];
+  const itemsByProductId = new Map();
+  let changed = false;
+
+  for (const item of cart.items) {
+    const productId = getProductId(item);
+    if (!productId) {
+      continue;
+    }
+
+    const existing = itemsByProductId.get(productId);
+    if (existing) {
+      existing.quantity += item.quantity;
+      changed = true;
+    } else {
+      itemsByProductId.set(productId, item);
+      mergedItems.push(item);
+    }
+  }
+
+  if (changed) {
+    cart.items = mergedItems;
+    await cart.save();
+  }
+
+  return cart;
+};
+
 const findOrCreateCart = async (userId) => {
   let cart = await Cart.findOne({ user: userId }).populate("items.product");
   if (!cart) {
     cart = await Cart.create({ user: userId, items: [] });
     cart = await cart.populate("items.product");
   }
-  return cart;
+  return normalizeCartItems(cart);
 };
 
 router.get("/", requireAuth, async (req, res, next) => {
@@ -40,15 +81,24 @@ router.post("/items", requireAuth, async (req, res, next) => {
 
     const cart = await findOrCreateCart(req.user._id);
     const existing = cart.items.find(
-      (item) => item.product.toString() === productId,
+      (item) => getProductId(item) === productId,
     );
 
+    const currentQuantity = existing ? existing.quantity : 0;
+    const availableQuantity = product.stock - currentQuantity;
+
+    if (availableQuantity <= 0) {
+      return res.status(400).json({ message: "Insufficient stock" });
+    }
+
+    const addQuantity = Math.min(qty, availableQuantity);
+
     if (existing) {
-      existing.quantity += qty;
+      existing.quantity += addQuantity;
     } else {
       cart.items.push({
         product: product._id,
-        quantity: qty,
+        quantity: addQuantity,
         priceAtAdd: product.price,
       });
     }
@@ -79,11 +129,11 @@ router.put("/items/:itemId", requireAuth, async (req, res, next) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    if (product.stock < qty) {
+    if (product.stock < 1) {
       return res.status(400).json({ message: "Insufficient stock" });
     }
 
-    item.quantity = qty;
+    item.quantity = Math.min(qty, product.stock);
     await cart.save();
     await cart.populate("items.product");
 
