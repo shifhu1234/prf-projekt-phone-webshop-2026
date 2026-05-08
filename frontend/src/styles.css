@@ -675,6 +675,10 @@ button {
   border-radius: 12px;
 }
 
+.linkHover{
+  cursor: pointer;
+}
+
 .danger {
   background: rgba(239, 68, 68, 0.15);
   color: #b91c1c;

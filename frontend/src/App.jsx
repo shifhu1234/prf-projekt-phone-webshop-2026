@@ -549,7 +549,9 @@ const ShopPage = ({ focus = "shop" }) => {
             </div>
           ) : (
             <div className="user-pill">
-              <span>Sign in to buy</span>
+              <span className="linkHover" onClick={scrollToAuth}>
+                Sign in to buy
+              </span>
             </div>
           )}
         </div>
