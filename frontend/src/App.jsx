@@ -720,7 +720,6 @@ const ShopPage = ({ focus = "shop" }) => {
                       style={{ animationDelay: `0ms` }}
                       onSubmit={e => {
                         e.preventDefault();
-                        // Prevent invalid category
                         if (!productForm.category || productForm.category === "new") {
                           fail("Please select a valid category.");
                           return;

@@ -25,7 +25,15 @@ const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
 const isProd = process.env.NODE_ENV === "production";
 
 app.set("trust proxy", 1);
-app.use(cors({ origin: corsOrigin, credentials: true }));
+const buildCorsOptionsSimple = () => {
+  const env = process.env.CORS_ORIGIN || corsOrigin;
+  if (env.includes(",")) {
+    const allowed = env.split(",").map((s) => s.trim());
+    return { origin: allowed, credentials: true };
+  }
+  return { origin: env, credentials: true };
+};
+app.use(cors(buildCorsOptionsSimple()));
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 
@@ -60,8 +68,8 @@ app.use(errorHandler);
 const start = async () => {
   await connectDb(mongoUrl);
   await seedDemo();
-  app.listen(port, "0.0.0.0", () => {
-    console.log(`API listening on 0.0.0.0:${port}`);
+  app.listen(port, () => {
+    console.log(`API listening on ${port}`);
   });
 };
 
