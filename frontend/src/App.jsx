@@ -63,10 +63,21 @@ const formatPrice = (value) => {
   return `${Number(value).toFixed(2)} EUR`;
 };
 
+const groupReviewsByProduct = (reviews = []) =>
+  reviews.reduce((groups, review) => {
+    const productId = review.product;
+    if (!groups[productId]) {
+      groups[productId] = [];
+    }
+    groups[productId].push(review);
+    return groups;
+  }, {});
+
 const ShopPage = ({ focus = "shop" }) => {
   const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [cart, setCart] = useState(null);
   const [orders, setOrders] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -89,6 +100,8 @@ const ShopPage = ({ focus = "shop" }) => {
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [reviewDrafts, setReviewDrafts] = useState({});
+  const [selectedReviewProductId, setSelectedReviewProductId] = useState(null);
 
   const catalogRef = useRef(null);
   const authRef = useRef(null);
@@ -152,6 +165,8 @@ const ShopPage = ({ focus = "shop" }) => {
     return filtered;
   }, [products, selectedCategory, specFilter, screenFilter]);
 
+  const reviewsByProduct = useMemo(() => groupReviewsByProduct(reviews), [reviews]);
+
   const notify = (message) => {
     setError("");
     setStatus(message);
@@ -184,6 +199,11 @@ const ShopPage = ({ focus = "shop" }) => {
     }
   };
 
+  const loadReviews = async () => {
+    const reviewsData = await apiGet("/reviews");
+    setReviews(reviewsData);
+  };
+
   const loadCart = async () => {
     if (!user) {
       return;
@@ -207,6 +227,7 @@ const ShopPage = ({ focus = "shop" }) => {
         setUser(me.user);
         setAuthMode("login");
         await loadCatalog();
+        await loadReviews();
       } catch (err) {
         fail(err.message);
       }
@@ -308,6 +329,43 @@ const ShopPage = ({ focus = "shop" }) => {
       fail(err.message);
     }
   };
+
+  const handleReviewSubmit = async (productId) => {
+    try {
+      const draft = reviewDrafts[productId] || { rating: "5", comment: "" };
+      await apiPost("/reviews", {
+        productId,
+        rating: Number(draft.rating),
+        comment: draft.comment,
+      });
+      setReviewDrafts((prev) => ({
+        ...prev,
+        [productId]: { rating: "5", comment: "" },
+      }));
+      await loadReviews();
+      notify("Review posted.");
+    } catch (err) {
+      fail(err.message);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await apiDelete(`/reviews/${reviewId}`);
+      await loadReviews();
+      notify("Review deleted.");
+    } catch (err) {
+      fail(err.message);
+    }
+  };
+
+  const openProductReviews = (productId) => {
+    setSelectedReviewProductId(productId);
+  };
+
+  const selectedReviewProduct = products.find(
+    (product) => product._id === selectedReviewProductId,
+  );
 
   const handleProfileUpdate = async (event) => {
     event.preventDefault();
@@ -479,7 +537,7 @@ const ShopPage = ({ focus = "shop" }) => {
               Auth
             </button>
           </div>
-          <span className="chip">Guest ready</span>
+          {/* <span className="chip">Guest ready</span> */}
           {/* Remove admin dashboard button, only show Shop if needed */}
           {user ? (
             <div className="user-pill">
@@ -840,17 +898,26 @@ const ShopPage = ({ focus = "shop" }) => {
                           </div>
                           <div className="product-footer">
                             <span className="pill">{product.category?.name || ""}</span>
-                            {canBuy ? (
+                            <div className="product-actions">
+                              {canBuy ? (
+                                <button
+                                  className="primary"
+                                  type="button"
+                                  onClick={() => handleAddToCart(product._id)}
+                                >
+                                  Add to cart
+                                </button>
+                              ) : (
+                                <span className="muted">Login to buy</span>
+                              )}
                               <button
-                                className="primary"
+                                className="ghost"
                                 type="button"
-                                onClick={() => handleAddToCart(product._id)}
+                                onClick={() => openProductReviews(product._id)}
                               >
-                                Add to cart
+                                Reviews ({reviewsByProduct[product._id]?.length || 0})
                               </button>
-                            ) : (
-                              <span className="muted">Login to buy</span>
-                            )}
+                            </div>
                           </div>
                           {isAdmin && (
                             <div className="row-actions">
@@ -874,6 +941,102 @@ const ShopPage = ({ focus = "shop" }) => {
               </div>
 
               <aside className="side-panels">
+                <div className="panel reviews-panel">
+                  <div className="panel-head">
+                    <h3>Reviews</h3>
+                    <span className="chip">Separate view</span>
+                  </div>
+                  {selectedReviewProduct ? (
+                    <div className="panel-body review-drawer">
+                      <div className="review-drawer-head">
+                        <div>
+                          <strong>{selectedReviewProduct.name}</strong>
+                          <p className="muted small">{selectedReviewProduct.brand}</p>
+                        </div>
+                        <button
+                          className="ghost"
+                          type="button"
+                          onClick={() => setSelectedReviewProductId(null)}
+                        >
+                          Close
+                        </button>
+                      </div>
+                      {reviewsByProduct[selectedReviewProduct._id]?.length ? (
+                        <div className="reviews-list reviews-list--drawer">
+                          {reviewsByProduct[selectedReviewProduct._id].map((review) => (
+                            <div key={review._id} className="review-item">
+                              <div className="review-item-head">
+                                <span>{review.user?.name || "Member"}</span>
+                                <span>{"★".repeat(review.rating)}</span>
+                              </div>
+                              {review.comment && (
+                                <p className="muted small">{review.comment}</p>
+                              )}
+                              {(isAdmin || review.user?._id === user?._id) && (
+                                <button
+                                  className="ghost review-delete"
+                                  type="button"
+                                  onClick={() => handleDeleteReview(review._id)}
+                                >
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="muted small">No reviews yet.</p>
+                      )}
+                      {user && (
+                        <div className="review-form">
+                          <select
+                            value={reviewDrafts[selectedReviewProduct._id]?.rating || "5"}
+                            onChange={(event) =>
+                              setReviewDrafts((prev) => ({
+                                ...prev,
+                                [selectedReviewProduct._id]: {
+                                  ...(prev[selectedReviewProduct._id] || { comment: "" }),
+                                  rating: event.target.value,
+                                },
+                              }))
+                            }
+                          >
+                            {[5, 4, 3, 2, 1].map((rating) => (
+                              <option key={rating} value={rating}>
+                                {rating} stars
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            value={reviewDrafts[selectedReviewProduct._id]?.comment || ""}
+                            onChange={(event) =>
+                              setReviewDrafts((prev) => ({
+                                ...prev,
+                                [selectedReviewProduct._id]: {
+                                  ...(prev[selectedReviewProduct._id] || { rating: "5" }),
+                                  comment: event.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="Leave a short review"
+                          />
+                          <button
+                            className="ghost"
+                            type="button"
+                            onClick={() => handleReviewSubmit(selectedReviewProduct._id)}
+                          >
+                            Post
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="muted small">
+                      Choose a product review button to read or add feedback.
+                    </p>
+                  )}
+                </div>
+
                 {/* Add category panel */}
                 {isAdmin && editingCategoryId !== "new" && (
                   <button

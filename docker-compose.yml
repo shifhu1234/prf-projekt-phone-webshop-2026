@@ -13,7 +13,7 @@ services:
     environment:
       - MONGO_URL=mongodb://phone-shop-db:27017/phone_shop
       - SESSION_SECRET=dev_secret
-      - CORS_ORIGIN=http://localhost:5173
+      - CORS_ORIGIN=http://localhost:5173,http://localhost:3000
       - SEED_DEMO=true
     depends_on:
       - db

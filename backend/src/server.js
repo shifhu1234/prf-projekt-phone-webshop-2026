@@ -60,8 +60,8 @@ app.use(errorHandler);
 const start = async () => {
   await connectDb(mongoUrl);
   await seedDemo();
-  app.listen(port, () => {
-    console.log(`API listening on ${port}`);
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`API listening on 0.0.0.0:${port}`);
   });
 };
 

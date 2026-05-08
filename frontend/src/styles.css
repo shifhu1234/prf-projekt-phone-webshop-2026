@@ -461,6 +461,87 @@ body {
   margin-top: auto;
 }
 
+.product-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.product-actions .ghost,
+.product-actions .primary {
+  white-space: nowrap;
+}
+
+.reviews-panel {
+  position: sticky;
+  top: 16px;
+}
+
+.review-drawer {
+  display: grid;
+  gap: 12px;
+}
+
+.review-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.reviews-list {
+  display: grid;
+  gap: 8px;
+}
+
+.reviews-list--drawer {
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.review-item {
+  display: grid;
+  gap: 6px;
+  padding: 10px 11px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.review-item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.review-form {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.review-form input,
+.review-form select {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.review-form input::placeholder {
+  color: #9ca3af;
+}
+
+.reviews-panel .small {
+  line-height: 1.45;
+}
+
+.review-delete {
+  justify-self: start;
+  padding: 4px 10px;
+}
+
 .pill {
   font-size: 11px;
   text-transform: uppercase;
@@ -775,6 +856,10 @@ button {
   .side-panels {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+
+  .reviews-panel {
+    position: static;
   }
 
   .panel {
