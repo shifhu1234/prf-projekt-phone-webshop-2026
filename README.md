@@ -40,7 +40,13 @@ The backend expects MongoDB and the frontend expects the backend API to be avail
 - Admin: admin@phone-shop.test / Admin123!
 - Customer: demo@phone-shop.test / Demo123!
 
-## Run With Dockerfiles (Required)
+## Run with Docker compose (recommended) 
+
+```
+docker compose up --build
+```
+
+## Run with Dockerfiles (Required)
 
 1. Create a network
 
@@ -81,15 +87,8 @@ docker run -d --name phone-shop-frontend --network phone-shop-net -p 5173:5173 \
 
 Open: http://localhost:5173
 
-## Optional: Docker Compose
+## Documentation and Prompts
 
-```
-docker compose up --build
-```
-
-## Documentation
-
-- docs/stack.md
-- docs/requirements.md
-- docs/api.md
 - docs/software-documentation.md
+- prompts/ai-usage.md
+- prompts/copilot-chat.md
