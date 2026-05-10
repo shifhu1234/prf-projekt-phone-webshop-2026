@@ -1,5 +1,5 @@
 ---
-date: 2026-04-27-2026-05-07
+date: 2026-04-27 - 2026-05-07
 title: "Mobil webshop projekt"
 tags: [copilot, chat-export]
 workspace: "prf-projekt-phone-webshop-2026"

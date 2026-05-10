@@ -1,10 +1,16 @@
-# Software Documentation
+# Technology Stack
 
-## Project Overview
+- Frontend: React + Vite
+- Backend: Node.js + Express
+- Database: MongoDB (containerized)
+- Auth: Session-based auth with express-session and MongoDB session store
+
+## Project Overview, why I Chose This Stack
 
 This project is a phone webshop built as a Dockerized monorepo. It contains a React + Vite frontend, a Node.js + Express backend, and a MongoDB database. The system supports browsing products, authentication, cart management, checkout, reviews, and admin CRUD operations.
 
-## Chosen Tech Stack
+I chose this stack because it keeps the webshop easy to build, test, and deploy as one Dockerized project. React + Vite gives a responsive frontend with a fast dev workflow, Express provides a lightweight API layer, MongoDB handles flexible product and category data well, and session-based auth with a MongoDB store gives persistent login state without adding JWT complexity.
+
 
 ### Frontend: React + Vite
 
@@ -30,33 +36,102 @@ The project uses `express-session` with `connect-mongo` as the session store. Th
 - `docs/` - project documentation
 - `prompts/` - AI usage and workflow notes
 
-The repository is organized as a monorepo so the frontend, backend, database, and documentation remain in one deployable project.
+<!-- ## Rationale
 
-## Database and Data Model
+- React gives a fast UI for catalog browsing and admin CRUD controls.
+- Express keeps REST endpoints simple and easy to document.
+- MongoDB fits product catalog data and flexible specs.
+- Session auth matches the requirement for authenticated CRUD and session handling.
+- Docker isolates the frontend, backend, and database into clear deployable units. -->
 
-The backend connects to MongoDB through Mongoose and supports a schema with at least six collections:
+# Database Setup and Data Model
 
-- `User`
-- `Category`
-- `Product`
-- `Cart`
-- `Order`
-- `Review`
+## Database Setup
 
-### Relationships
+The project uses MongoDB as the main database. It is containerized through Docker Compose and connected from the backend with Mongoose.
 
-- A `User` can have one cart, many orders, and many reviews.
-- A `Category` can contain many products.
-- A `Product` belongs to one category and can appear in cart items, order items, and reviews.
-- A `Cart` belongs to one user and stores many cart items.
-- An `Order` belongs to one user and stores many order items.
-- A `Review` belongs to one user and one product.
+- Local or Dockerized MongoDB can be used
+- The current project setup uses a Docker MongoDB service in `docker-compose.yml`
+- The backend connects through `backend/src/config/db.js`
 
-This model supports the webshop domain while staying flexible enough for product specs, cart updates, and order snapshots.
+## Schema Overview
 
-## Requirements Coverage
+The project currently uses six domain collections and one session store:
 
-### Functional Requirements
+1. `User`
+2. `Category`
+3. `Product`
+4. `Cart`
+5. `Order`
+6. `Review`
+7. MongoDB session store collection used by `express-session` and `connect-mongo`
+
+## Entity Relations
+
+### User
+
+- Has one cart
+- Has many orders
+- Has many reviews
+- Stores identity and role information for session-based auth
+
+### Category
+
+- Has many products
+- A product belongs to exactly one category
+
+### Product
+
+- Belongs to one category
+- Appears in cart items
+- Appears in order items
+- Can have many reviews
+
+### Cart
+
+- Belongs to one user
+- Contains many cart items
+- Each cart item references one product
+
+### Order
+
+- Belongs to one user
+- Contains many order items
+- Each order item references one product and stores the purchased snapshot values
+
+### Review
+
+- Belongs to one user
+- Belongs to one product
+- Stores a rating and optional comment
+
+## Schema Detail
+
+| Collection | Key Fields | Relations |
+| --- | --- | --- |
+| `User` | `name`, `email`, `passwordHash`, `role` | One-to-one with `Cart`, one-to-many with `Order`, one-to-many with `Review` |
+| `Category` | `name`, `description` | One-to-many with `Product` |
+| `Product` | `name`, `brand`, `price`, `stock`, `category`, `specs`, `imageUrl` | Many-to-one with `Category`, one-to-many with `Review` |
+| `Cart` | `user`, `items[]` | Many-to-one with `User`, item-level references to `Product` |
+| `Order` | `user`, `items[]`, `total`, `status` | Many-to-one with `User`, item-level references to `Product` |
+| `Review` | `user`, `product`, `rating`, `comment` | Many-to-one with `User`, many-to-one with `Product` |
+
+## Why This Model Works
+
+This schema is small enough to keep the webshop easy to maintain, but it still supports the required catalog, cart, checkout, and review flows. It also fits MongoDB well because product specs, cart items, and order items can be stored as flexible embedded arrays while core relationships stay normalized through ObjectId references.
+
+# Requirements Mapping
+
+<!-- ## Functional Requirements
+
+- Roles: guest, customer, admin
+- Guests can browse the catalog and prices
+- Customers can register, login, build a cart, and place orders
+- Admin can create, update, and delete products and categories
+- CRUD operations are protected with authenticated sessions
+- REST API supports product, category, cart, order, and review flows -->
+
+## Functional Requirements
 
 #### Browse Products and Categories
 
@@ -78,7 +153,7 @@ Admins can create, edit, and delete products and categories through the GUI. The
 
 Users can read, create, and delete reviews, with ownership and role checks enforced on the backend.
 
-### Non-Functional Requirements
+## Non-Functional Requirements
 
 #### Security
 
@@ -100,9 +175,60 @@ The whole system is containerized, which makes local setup and deployment consis
 
 The project matches the assignment well because it combines a modern frontend, a simple and maintainable REST API, a document database that fits the data model, and secure session-based authentication. It also meets the documentation requirement by clearly separating stack rationale, database design, API design, and requirement coverage in one place.
 
-## Related Documentation
+<!-- ## Related Documentation
 
 - [Stack rationale](stack.md)
 - [Database schema](database.md)
 - [API summary](api.md)
-- [Requirements mapping](requirements.md)
+- [Requirements mapping](requirements.md) -->
+
+# REST API Summary
+
+Base URL: /api
+
+## Access Model
+
+- Public read endpoints stay open for guest browsing of the catalog.
+- Create, update, and delete endpoints require an authenticated session.
+- Admin-only CRUD operations also require the admin role.
+
+## Auth
+
+- POST /auth/register
+- POST /auth/login
+- POST /auth/logout
+- GET /auth/me
+
+## Products
+
+- GET /products
+- GET /products/:id
+- POST /products (admin)
+- PUT /products/:id (admin)
+- DELETE /products/:id (admin)
+
+## Categories
+
+- GET /categories
+- POST /categories (admin)
+- PUT /categories/:id (admin)
+- DELETE /categories/:id (admin)
+
+## Cart
+
+- GET /cart
+- POST /cart/items
+- PUT /cart/items/:itemId
+- DELETE /cart/items/:itemId
+
+## Orders
+
+- POST /orders
+- GET /orders
+- GET /orders/:id
+
+## Reviews
+
+- GET /reviews?productId=...
+- POST /reviews
+- DELETE /reviews/:id
