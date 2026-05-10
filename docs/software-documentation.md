@@ -1,3 +1,11 @@
+# Install and run
+
+You can run everything with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
 # Technology Stack
 
 - Frontend: React + Vite
@@ -10,7 +18,6 @@
 This project is a phone webshop built as a Dockerized monorepo. It contains a React + Vite frontend, a Node.js + Express backend, and a MongoDB database. The system supports browsing products, authentication, cart management, checkout, reviews, and admin CRUD operations.
 
 I chose this stack because it keeps the webshop easy to build, test, and deploy as one Dockerized project. React + Vite gives a responsive frontend with a fast dev workflow, Express provides a lightweight API layer, MongoDB handles flexible product and category data well, and session-based auth with a MongoDB store gives persistent login state without adding JWT complexity.
-
 
 ### Frontend: React + Vite
 
@@ -36,13 +43,6 @@ The project uses `express-session` with `connect-mongo` as the session store. Th
 - `docs/` - project documentation
 - `prompts/` - AI usage and workflow notes
 
-<!-- ## Rationale
-
-- React gives a fast UI for catalog browsing and admin CRUD controls.
-- Express keeps REST endpoints simple and easy to document.
-- MongoDB fits product catalog data and flexible specs.
-- Session auth matches the requirement for authenticated CRUD and session handling.
-- Docker isolates the frontend, backend, and database into clear deployable units. -->
 
 # Database Setup and Data Model
 
@@ -121,15 +121,6 @@ The project currently uses six domain collections and one session store:
 This schema is small enough to keep the webshop easy to maintain, but it still supports the required catalog, cart, checkout, and review flows. It also fits MongoDB well because product specs, cart items, and order items can be stored as flexible embedded arrays while core relationships stay normalized through ObjectId references.
 
 # Requirements Mapping
-
-<!-- ## Functional Requirements
-
-- Roles: guest, customer, admin
-- Guests can browse the catalog and prices
-- Customers can register, login, build a cart, and place orders
-- Admin can create, update, and delete products and categories
-- CRUD operations are protected with authenticated sessions
-- REST API supports product, category, cart, order, and review flows -->
 
 ## Functional Requirements
 

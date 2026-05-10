@@ -1,4 +1,7 @@
-version: "3.9"
+# NOTE: I have removed the version number from this file to make it compatible with older versions of docker-compose.
+# If you know what you are doing, you can add the version number back in.
+
+# version: "3.9"
 services:
   db:
     build: ./db
