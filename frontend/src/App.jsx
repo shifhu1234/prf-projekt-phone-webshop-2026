@@ -606,7 +606,7 @@ const ShopPage = ({ focus = "shop" }) => {
                     <div className="phone-dot" />
                     <div className="phone-info">
                       <p>OLED 6.7</p>
-                      <p>512 GB</p>
+                      <p>1 TB</p>
                       <p>Triple cam</p>
                     </div>
                   </div>
@@ -662,6 +662,8 @@ const ShopPage = ({ focus = "shop" }) => {
                       <label className="storage-filter">
                         <span>Storage</span>
                         <select
+                          id="storageFilter"
+                          name="storageFilter"
                           value={specFilter}
                           onChange={(event) =>
                             updateFilterWithoutScrollJump(() =>
@@ -682,6 +684,8 @@ const ShopPage = ({ focus = "shop" }) => {
                       <label className="screen-filter">
                         <span>Screen</span>
                         <select
+                          id="screenFilter"
+                          name="screenFilter"
                           value={screenFilter}
                           onChange={(event) =>
                             updateFilterWithoutScrollJump(() =>
@@ -731,23 +735,29 @@ const ShopPage = ({ focus = "shop" }) => {
                     >
                       <div className="product-image" style={{ backgroundImage: `url(${productForm.imageUrl || ""})` }} />
                       <div className="product-body">
-                        <div className="product-inline-fields">
+                        <div className="product-inline-fields product-form-fields">
                           <input
+                            id="newProductName"
+                            name="name"
                             value={productForm.name}
                             onChange={e => setProductForm(prev => ({ ...prev, name: e.target.value }))}
                             placeholder="Name"
                             required
                           />
                           <input
+                            id="newProductBrand"
+                            name="brand"
                             value={productForm.brand}
                             onChange={e => setProductForm(prev => ({ ...prev, brand: e.target.value }))}
                             placeholder="Brand"
                             required
                           />
                         </div>
-                        <div className="price-row">
+                        <div className="price-row product-form-split">
                           <input
                             type="number"
+                            id="newProductPrice"
+                            name="price"
                             value={productForm.price}
                             onChange={e => setProductForm(prev => ({ ...prev, price: e.target.value }))}
                             placeholder="Price"
@@ -755,21 +765,27 @@ const ShopPage = ({ focus = "shop" }) => {
                           />
                           <input
                             type="number"
+                            id="newProductStock"
+                            name="stock"
                             value={productForm.stock}
                             onChange={e => setProductForm(prev => ({ ...prev, stock: e.target.value }))}
                             placeholder="Stock"
                             required
                           />
                         </div>
-                        <div className="specs">
+                        <div className="specs product-form-specs">
                           <input
+                            id="newProductSpecs"
+                            name="specs"
                             value={productForm.specs}
                             onChange={e => setProductForm(prev => ({ ...prev, specs: e.target.value }))}
                             placeholder="Specs (comma separated)"
                           />
                         </div>
-                        <div className="product-footer">
+                        <div className="product-footer product-form-footer">
                           <select
+                            id="newProductCategory"
+                            name="category"
                             value={productForm.category}
                             onChange={e => setProductForm(prev => ({ ...prev, category: e.target.value }))}
                             required
@@ -780,6 +796,8 @@ const ShopPage = ({ focus = "shop" }) => {
                             ))}
                           </select>
                           <input
+                            id="newProductImageUrl"
+                            name="imageUrl"
                             value={productForm.imageUrl}
                             onChange={e => setProductForm(prev => ({ ...prev, imageUrl: e.target.value }))}
                             placeholder="Image URL"
@@ -809,23 +827,29 @@ const ShopPage = ({ focus = "shop" }) => {
                       >
                         <div className="product-image" style={{ backgroundImage: `url(${productForm.imageUrl || ""})` }} />
                         <div className="product-body">
-                          <div>
+                          <div className="product-form-fields">
                             <input
+                              id={`editProductName-${product._id}`}
+                              name="name"
                               value={productForm.name}
                               onChange={e => setProductForm(prev => ({ ...prev, name: e.target.value }))}
                               placeholder="Name"
                               required
                             />
                             <input
+                              id={`editProductBrand-${product._id}`}
+                              name="brand"
                               value={productForm.brand}
                               onChange={e => setProductForm(prev => ({ ...prev, brand: e.target.value }))}
                               placeholder="Brand"
                               required
                             />
                           </div>
-                          <div className="price-row">
+                          <div className="price-row product-form-split">
                             <input
                               type="number"
+                              id={`editProductPrice-${product._id}`}
+                              name="price"
                               value={productForm.price}
                               onChange={e => setProductForm(prev => ({ ...prev, price: e.target.value }))}
                               placeholder="Price"
@@ -833,21 +857,27 @@ const ShopPage = ({ focus = "shop" }) => {
                             />
                             <input
                               type="number"
+                              id={`editProductStock-${product._id}`}
+                              name="stock"
                               value={productForm.stock}
                               onChange={e => setProductForm(prev => ({ ...prev, stock: e.target.value }))}
                               placeholder="Stock"
                               required
                             />
                           </div>
-                          <div className="specs">
+                          <div className="specs product-form-specs">
                             <input
+                              id={`editProductSpecs-${product._id}`}
+                              name="specs"
                               value={productForm.specs}
                               onChange={e => setProductForm(prev => ({ ...prev, specs: e.target.value }))}
                               placeholder="Specs (comma separated)"
                             />
                           </div>
-                          <div className="product-footer">
+                          <div className="product-footer product-form-footer">
                             <select
+                              id={`editProductCategory-${product._id}`}
+                              name="category"
                               value={productForm.category}
                               onChange={e => setProductForm(prev => ({ ...prev, category: e.target.value }))}
                               required
@@ -858,6 +888,8 @@ const ShopPage = ({ focus = "shop" }) => {
                               ))}
                             </select>
                             <input
+                              id={`editProductImageUrl-${product._id}`}
+                              name="imageUrl"
                               value={productForm.imageUrl}
                               onChange={e => setProductForm(prev => ({ ...prev, imageUrl: e.target.value }))}
                               placeholder="Image URL"
@@ -991,6 +1023,8 @@ const ShopPage = ({ focus = "shop" }) => {
                       {user && (
                         <div className="review-form">
                           <select
+                            id={`reviewRating-${selectedReviewProduct._id}`}
+                            name="rating"
                             value={reviewDrafts[selectedReviewProduct._id]?.rating || "5"}
                             onChange={(event) =>
                               setReviewDrafts((prev) => ({
@@ -1009,6 +1043,8 @@ const ShopPage = ({ focus = "shop" }) => {
                             ))}
                           </select>
                           <input
+                            id={`reviewComment-${selectedReviewProduct._id}`}
+                            name="comment"
                             value={reviewDrafts[selectedReviewProduct._id]?.comment || ""}
                             onChange={(event) =>
                               setReviewDrafts((prev) => ({
@@ -1069,6 +1105,8 @@ const ShopPage = ({ focus = "shop" }) => {
                       <label>
                         <span>Name</span>
                         <input
+                          id="categoryName"
+                          name="name"
                           value={categoryForm.name}
                           onChange={e => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
                           placeholder="Category name"
@@ -1078,6 +1116,8 @@ const ShopPage = ({ focus = "shop" }) => {
                       <label>
                         <span>Description (optional)</span>
                         <input
+                          id="categoryDescription"
+                          name="description"
                           value={categoryForm.description}
                           onChange={e => setCategoryForm(prev => ({ ...prev, description: e.target.value }))}
                           placeholder="Describe this category"
@@ -1118,6 +1158,8 @@ const ShopPage = ({ focus = "shop" }) => {
                               <div className="cart-controls">
                                 <input
                                   type="number"
+                                  id={`cartQuantity-${item._id}`}
+                                  name="quantity"
                                   min="1"
                                   max={item.product?.stock || 1}
                                   value={item.quantity}
@@ -1203,11 +1245,14 @@ const ShopPage = ({ focus = "shop" }) => {
                       <label>
                         Name
                         <input
+                          id="profileName"
+                          name="name"
                           value={profileForm.name}
                           onChange={(event) =>
                             setProfileForm({ name: event.target.value })
                           }
                           required
+                          autoComplete="name"
                         />
                       </label>
                       <button className="primary" type="submit">
@@ -1218,6 +1263,8 @@ const ShopPage = ({ focus = "shop" }) => {
                       <label>
                         Current password
                         <input
+                          id="currentPassword"
+                          name="currentPassword"
                           type="password"
                           value={passwordForm.currentPassword}
                           onChange={(event) =>
@@ -1232,6 +1279,8 @@ const ShopPage = ({ focus = "shop" }) => {
                       <label>
                         New password
                         <input
+                          id="newPassword"
+                          name="newPassword"
                           type="password"
                           value={passwordForm.newPassword}
                           onChange={(event) =>
@@ -1280,6 +1329,8 @@ const ShopPage = ({ focus = "shop" }) => {
                         <label>
                           Name
                           <input
+                            id="authName"
+                            name="name"
                             value={authForm.name}
                             onChange={(event) =>
                               setAuthForm((prev) => ({
@@ -1295,6 +1346,8 @@ const ShopPage = ({ focus = "shop" }) => {
                       <label>
                         Email
                         <input
+                          id="authEmail"
+                          name="email"
                           value={authForm.email}
                           onChange={(event) =>
                             setAuthForm((prev) => ({
@@ -1310,6 +1363,8 @@ const ShopPage = ({ focus = "shop" }) => {
                         Password
                         <input
                           type="password"
+                          id="authPassword"
+                          name="password"
                           value={authForm.password}
                           onChange={(event) =>
                             setAuthForm((prev) => ({
