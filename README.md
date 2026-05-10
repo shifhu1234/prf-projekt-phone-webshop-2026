@@ -1,4 +1,5 @@
-# Mobile Webshop (Programrendszerek fejlesztése projektmunka)
+# Mobile Webshop 
+## (Programrendszerek fejlesztése projektmunka)
 
 A full stack mobile phone webshop with session-based auth, CRUD management, and a seeded demo catalog.
 
